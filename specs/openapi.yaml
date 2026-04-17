@@ -1,0 +1,687 @@
+openapi: 3.1.0
+info:
+  description: |-
+    The NFON Call History API provides endpoints for retrieving, streaming, and deleting call history records for an authenticated NFON Cloud Telephony user.
+
+    This API is currently offered as part of **Login with NFON (Early Access)**. As an early access offering, the API is subject to change. Updates may occur on short notice, though we strive to provide advance notice where possible.
+    
+    For more information, see: https://www.nfon.com/en/integrations/login-with-nfon/
+  title: NFON Call History API
+  version: "2.0-early-access"
+  termsOfService: https://www.nfon.com/en/legal/gtc
+  contact:
+    name: NFON
+    email: integration@nfon.com
+  license:
+    name: NFON proprietary
+servers:
+  - url: https://api.nfon.com/call-history
+
+tags:
+  - name: records
+    description: Call Records Management
+
+paths:
+  "/records":
+    get:
+      tags:
+        - records
+      summary: "Get, stream, and search call records"
+      description: |-
+        Get the latest call records. They can be filtered by number, name, time or type.
+
+        The response format is controlled by the `Accept` request header:
+
+        `application/json` *(default)*:
+
+        Returns a JSON array of call records.
+
+        `text/event-stream`:
+
+        Streams call records as Server-Sent Events (SSE).
+
+        Each event carries one JSON-encoded call record in its `data` field.
+        A record will be **re-sent** if it is updated after initial delivery. The most common update case is transcription processing: a call with transcription activated is first streamed with `transcription.available: false` (audio processing still in progress). Once processing completes, the **same record** — identified by the same `uuid` — is streamed again with `transcription.available: true` and an `updated` timestamp. Clients should use `uuid` to detect such updates and replace the previously received record accordingly.
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: search
+          in: query
+          description: "Search the records. The search looks at the caller and callee names and numbers. Any other call record fields are currently not considered when searching"
+          required: false
+          schema:
+            type: string
+        - name: filter
+          in: query
+          description: |-
+            Filter call records that match certain property values.
+
+            It is possible to specify multiple filters by providing a comma separated list. In this case only records that match all filters will be returned in the result.
+
+            For compatibility reasons, the `customer` and `extension` filters are treated as separate query parameters.
+          required: false
+          schema:
+            type: string
+            enum: ['status:missed', 'status:answered', 'status:cancelled', 'direction:inbound', 'direction:outbound', 'transcription', 'internal:<extension-number>', 'global:<number>']
+        - name: customer
+          in: query
+          description: "The K-number for which to return call records. Applies only to admin level access with appropriate permissions"
+          required: false
+          schema:
+            type: string
+        - name: extension
+          in: query
+          description: "The extension (user) for which to return call records. Applies to admin level access with appropriate permissions"
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: "Limit the list to records that are newer than this timestamp."
+          required: false
+          schema:
+            type: number
+        - name: to
+          in: query
+          description: "Limit the list to records that are older than this timestamp"
+          required: false
+          schema:
+            type: number
+        - name: limit
+          in: query
+          description: "Limit the number of call records in the result."
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: offset
+          in: query
+          description: Generate the list starting from offset
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: complete
+          in: query
+          description: Should the records include the complete transcripts and summaries (for transcribed calls).
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: sort
+          in: query
+          description: Set creation time sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: |-
+            Call records. The response format depends on the `Accept` request header:
+            - `application/json` (default): a JSON array of call records.
+            - `text/event-stream`: a Server-Sent Events (SSE) stream of call records. Records are delivered in chronological order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/record'   # Reference to an object
+              examples:
+                call list:
+                  value:
+                  - uuid: "110e8400-e29b-41d4-a716-446655440011"
+                    duration: 30
+                    direction: "outbound"
+                    caller:
+                      name: "Alice"
+                      number: "1001"
+                      context: "K9999"
+                    callee:
+                      name: "Bob"
+                      number: "4989123456789"
+                      context: "global"
+                    status: answered
+                    created: "2025-06-03T10:12:34Z"
+                    trunk_code: "07"
+                    transcription:
+                      available: false
+                  - uuid: "220e8400-e29b-41d4-a716-446655440022"
+                    duration: 30
+                    direction: "inbound"
+                    caller:
+                      name: "Charlie"
+                      number: "1003"
+                      context: "K9999"
+                    callee:
+                      name: "Alice"
+                      number: "1001"
+                      context: "K9999"
+                    status: answered
+                    created: "2025-06-03T10:22:24Z"
+                    transcription:
+                      available: true
+                  - uuid: "330e8400-e29b-41d4-a716-446655440033"
+                    duration: 0
+                    direction: "inbound"
+                    caller:
+                      name: "Charlie"
+                      number: "1003"
+                      context: "K9999"
+                    callee:
+                      name: "Alice"
+                      number: "1001"
+                      context: "K9999"
+                    history:
+                      - callee:
+                          name: "Test Group"
+                          number: "10"
+                          context: "K9999"
+                          destination_type: "group"
+                        updated: "2025-06-03T10:25:26Z"
+                    status: cancelled
+                    created: "2025-06-03T10:25:25Z"
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Sequential integer identifier for the SSE event.
+                  data:
+                    type: string
+                    description: JSON-encoded call record.
+                    contentMediaType: application/json
+                    contentSchema:
+                      $ref: '#/components/schemas/record'
+                required:
+                  - data
+              examples:
+                record stream (with transcription updated):
+                  value: |
+                    id: 0
+                    data: {"uuid":"110e8400-e29b-41d4-a716-446655440011","duration":30,"direction":"outbound","caller":{"name":"Alice","number":"1001","context":"K9999"},"callee":{"name":"Bob","number":"4989123456789","context":"global"},"status":"answered","created":"2025-06-03T10:12:34Z","trunk_code":"07"}
+
+                    id: 1
+                    data: {"uuid":"330e8400-e29b-41d4-a716-446655440033","duration":0,"direction":"inbound","caller":{"name":"Charlie","number":"1003","context":"K9999"},"callee":{"name":"Alice","number":"1001","context":"K9999"},"history":[{"callee":{"name":"Test Group","number":"10","context":"K9999","destination_type":"group"}, "updated":"2025-06-03T10:25:26Z"}],"status":"cancelled","created":"2025-06-03T10:25:25Z"}
+
+                    id: 2
+                    data: {"uuid":"220e8400-e29b-41d4-a716-446655440022","duration":30,"direction":"inbound","caller":{"name":"Charlie","number":"1003","context":"K9999"},"callee":{"name":"Alice","number":"1001","context":"K9999"},"status":"answered","created":"2025-06-03T10:22:24Z","transcription":{"available":false}}
+
+                    id: 3
+                    data: {"uuid":"220e8400-e29b-41d4-a716-446655440022","duration":30,"direction":"inbound","caller":{"name":"Charlie","number":"1003","context":"K9999"},"callee":{"name":"Alice","number":"1001","context":"K9999"},"status":"answered","created":"2025-06-03T10:22:24Z","updated":"2025-06-03T10:22:31Z","transcription":{"available":true}}
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "500":
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - records
+      summary: "Delete multiple call records"
+      description: "Delete some or all call records (depending on the filters)"
+      security:
+        - bearer_auth: []
+      parameters:
+        - name: uuid
+          in: query
+          description: "Delete call records with a given `uuid`. Multiple `uuid` parameters in a single query are supported as well."
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+            
+        - name: filter
+          in: query
+          description: |-
+            Only delete call records that match the filter.
+
+            It is possible to specify multiple filters by providing a comma separated list. In this case only the records that match all filters will be deleted.
+          required: false
+          schema:
+            type: string
+            enum: ['status:missed', 'status:answered', 'status:cancelled', 'direction:inbound', 'direction:outbound', 'transcription', 'internal:<extension-number>', 'global:<number>']
+        - name: customer
+          in: query
+          description: "The K-number for which to return call records. Applies only to admin level access with appropriate permissions"
+          required: false
+          schema:
+            type: string
+        - name: extension
+          in: query
+          description: "The extension (user) for which to return call records. Applies only to admin level access with appropriate permissions"
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: "Limit the list to records that are newer than this timestamp."
+          required: false
+          schema:
+            type: number
+        - name: to
+          in: query
+          description: "Limit the list to records that are older than this timestamp"
+          required: false
+          schema:
+            type: number
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/ServerError'
+
+  "/records/{uuid}":
+    get:
+      tags:
+        - records
+      summary: "Get call record details"
+      description: "Return call record details for a given call record uuid"
+      security:
+        - bearer_auth: []
+      parameters:
+        - in: path
+          name: uuid
+          description: "The `uuid` of the call record"
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The call record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/record'   # Reference to an object
+              examples:
+                call (without summary):
+                  $ref: '#/components/examples/callWithoutSummary'
+                missed group call:
+                  $ref: '#/components/examples/missedGroupCall'
+                call forwarding/transfer:
+                  $ref: '#/components/examples/callForwardingTransfer'
+                call forwarding/transfer (multiple):
+                  $ref: '#/components/examples/callForwardingTransferMultiple'
+                call with summary (processing not done yet):
+                  $ref: '#/components/examples/callWithSummaryProcessing'
+                call with summary (completed):
+                  $ref: '#/components/examples/callWithSummaryCompleted'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - records
+      summary: "Delete single call record"
+      description: "Deletes the call record for the given call record uuid"
+      security:
+        - bearer_auth: []
+      parameters:
+        - in: path
+          name: uuid
+          description: "The `uuid` of the call record"
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/ServerError'
+
+components:
+  examples:
+    callWithoutSummary:
+      summary: "call (without summary)"
+      value:
+        uuid: "000e8400-e29b-41d4-a716-446655440000"
+        duration: 30
+        direction: "inbound"
+        caller:
+          name: "Charlie"
+          number: "1003"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        status: answered
+        created: "2025-06-03T10:22:24Z"
+    missedGroupCall:
+      summary: "missed group call"
+      value:
+        uuid: "330e8400-e29b-41d4-a716-446655440033"
+        duration: 0
+        direction: "inbound"
+        caller:
+          name: "Charlie"
+          number: "1003"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        history:
+          - callee:
+              name: "Test Group"
+              number: "10"
+              context: "K9999"
+              destination_type: "group"
+            updated: "2025-06-03T10:25:26Z"
+        status: cancelled
+        created: "2025-06-03T10:25:25Z"
+    callForwardingTransfer:
+      summary: "call forwarding/transfer"
+      value:
+        uuid: "330e8400-e29b-41d4-a716-446655440034"
+        duration: 25
+        direction: "inbound"
+        caller:
+          name: "Charlie"
+          number: "1003"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        history:
+          - callee:
+              name: "Bob"
+              number: "1002"
+              context: "K9999"
+            updated: "2025-06-03T10:25:45Z"
+        status: answered
+        created: "2025-06-03T10:25:25Z"
+    callForwardingTransferMultiple:
+      summary: "call forwarding/transfer (multiple)"
+      value:
+        uuid: "330e8400-e29b-41d4-a716-446655440034"
+        duration: 25
+        direction: "inbound"
+        caller:
+          name: "Dave"
+          number: "1004"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        history:
+          - callee:
+              name: "Bob"
+              number: "1002"
+              context: "K9999"
+            updated: "2025-06-03T10:25:45Z"
+          - caller:
+              name: "Charlie"
+              number: "1003"
+              context: "K9999"
+            updated: "2025-06-03T10:25:55Z"
+        status: answered
+        created: "2025-06-03T10:25:25Z"
+    callWithSummaryProcessing:
+      summary: "call with summary (processing not done yet)"
+      value:
+        uuid: "110e8400-e29b-41d4-a716-446655440011"
+        duration: 30
+        direction: "inbound"
+        caller:
+          name: "Charlie"
+          number: "1003"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        status: answered
+        created: "2025-06-03T10:22:24Z"
+        transcription:
+          available: false
+    callWithSummaryCompleted:
+      summary: "call with summary (completed)"
+      value:
+        uuid: "110e8400-e29b-41d4-a716-446655440011"
+        duration: 30
+        direction: "inbound"
+        caller:
+          name: "Charlie"
+          number: "1003"
+          context: "K9999"
+        callee:
+          name: "Alice"
+          number: "1001"
+          context: "K9999"
+        status: answered
+        created: "2025-06-03T10:22:24Z"
+        updated: "2025-06-03T10:22:29Z"
+        transcription:
+          available: true
+          transcript:
+            - time: 1970-07-22T11:13:10+01:00
+              source: caller
+              event: start
+            - time: 1970-07-22T11:13:12+01:00
+              source: caller
+              event: speech
+              text: "Hello Bob"
+            - time: 1970-07-22T11:13:14+01:00
+              source: callee
+              event: speech
+              text: "Hello Alice"
+            - time: 1970-07-22T11:13:15+01:00
+              source: caller
+              event: stop
+          summary: "Alice called Bob to say hello."
+          language_autodetect: true
+
+  responses:
+    BadRequest:
+      description: One or more request parameters failed validation
+      headers:
+        X-Request-Id:
+          schema:
+            type: string
+          description: Unique identifier used to track this particular request on the backend.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    NotFound:
+      description: Resource was not found
+      headers:
+        X-Request-Id:
+          schema:
+            type: string
+          description: Unique identifier used to track this particular request on the backend.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    ServerError:
+      description: Unexpected server error
+      headers:
+        X-Request-Id:
+          schema:
+            type: string
+          description: Unique identifier used to track this particular request on the backend.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JSON Web Token"
+
+  schemas:
+    record:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        created:
+          type: string
+          format: date-time
+          description: "The time when the call was created. Note that this does **not** refer to the time when the call record was saved, but rather when the call itself was created (when someone placed or received the call)."
+        updated:
+          type: string
+          format: date-time
+          description: "`optional`. Only present if a call record has changed after creation. For example if a transcription was added to it."
+        duration:
+          type: integer
+          description: Call duration.
+        caller:
+          type: object
+          properties:
+            name:
+              type: string
+            number:
+              type: string
+            context:
+              type: string
+              description: |-
+                Identifies the context in which the `number` should be interpreted.
+
+                - **`<K-number>`** (e.g. `K9999`): The number is an extension within the telephone system identified by that K-number.
+                - **`global`**: The number is a globally routable number in international E.164 format, without any leading prefix (e.g. `49123456789`).
+                - **`emergency`**: The number is an emergency number (e.g. `112`).
+                - **`short`**: The number is a short code number (e.g. `116116`).
+                - **`conference`**: The number represents a conference or meeting identifier.
+
+                **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown context values and **should** interpret them to mean `<K-number>`. This is required to ensure that clients remain forwards compatible with future API versions.
+              enum: ['<K-number>', 'global', 'emergency', 'short', 'conference']
+        callee:
+          type: object
+          properties:
+            name:
+              type: string
+            number:
+              type: string
+            context:
+              type: string
+              description: "For details refer to the explanation in the `caller.context` property."
+            destination_type:
+              description: |-
+                `optional` Only set for internal destinations.
+
+                **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `destination_type` values that are not listed here (for example values that may refer to future PBX services). The clients should treat **unknown** or **empty** `destination_type` values as `extension`.
+              type: string
+              enum: ["extension", "queue", "skill", "ivr", "group", "time-control"]
+        direction:
+          type: string
+          description: The direction of the call from the perspective of the end user to which this call record applies.
+          enum: [inbound,outbound]
+        history:
+          type: array
+          description: |-
+            `optional` List of all previous callers and callees. The callee or caller can change in case of transfer for example. This list effectively records all call diversions.
+
+            **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown history objects in the history list (for example objects that may not have a `caller` and `callee` property at all) and **must** ignore them. This is required to ensure that clients remain forwards compatible with future API versions.
+          items:
+            type: object
+            description: |-
+              - Exactly one of `caller` or `callee` can be set; the other is absent. Future versions of the API may add additional keys to represent extended histories.
+            required:
+              - updated
+            properties:
+              caller:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  number:
+                    type: string
+                  context:
+                    type: string
+                    description: "For details refer to the explanation in the `caller.context` property."
+              callee:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  number:
+                    type: string
+                  context:
+                    type: string
+                    description: "For details refer to the explanation in the `caller.context` property."
+                  destination_type:
+                    type: string
+                    description: "**IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `destination_type` values that are not listed here (for example values that may refer to future PBX services). The clients should treat **unknown** or **empty** `destination_type` values as `extension`."
+                    enum: ["extension", "queue", "skill", "ivr", "group", "time-control"]
+              updated:
+                type: string
+                format: date-time
+                description: "`required` The time when the caller or callee diversion took place"
+        status:
+          type: string
+          description: |-
+            The final call status.
+
+            **IMPORTANT**: Any client side implementation **must** tolerate the addition of future new values to this list (for example `busy`, `rejected`, and similar) and **must** treat them as `unknown` if the client doesn't recognize them. This is required to ensure that clients remain forwards compatible with future API versions.
+
+          enum: [answered,missed,cancelled,unknown]
+        trunk_code:
+          type: string
+          description: Outbound or inbound trunk id (for example `07`). This can be used as prefix to force a call via a specific trunk (for example `#07 0176xxxxx`). This will force the call via the trunk with the id `07`. Only set on external calls.
+        transcription:
+          type: object
+          description: "`optional` Present only for calls where transcription was activated"
+          properties:
+            available:
+              type: boolean
+              description: "`optional` Indicates if transcription is available."
+            summary:
+              type: string
+              description: "`optional` Summary of the transcription."
+            language_autodetect:
+              type: boolean
+              description: "`optional` Indicates if the language was automatically detected (true) or manually set (false)."
+            transcript:
+              type: array
+              description: "`optional` List of transcript entries with time, source, and text."
+              items:
+                type: object
+                properties:
+                  time:
+                    type: string
+                    format: date-time
+                    description: "`required` Time of the event as defined by RFC3339"
+                  source:
+                    type: string
+                    enum: [caller, callee]
+                    description: "`required` Source label, either `caller` or `callee`."
+                  event:
+                    type: string
+                    enum: [start, stop, speech]
+                    description: "`required` The type of the entry. It can represent either speech data or non-speech data like `start` or `stop` events."
+                  text:
+                    type: string
+                    description: "`optional` The transcribed text for this entry. Only required and set for `speech` events, but optional for other types of events."
+        crm:
+          type: string
+          description: "`optional` Additional CRM data related to the call."
+    error:
+      type: object
+      properties:
+        error:
+          type: string
+      examples:
+        - error: "some error message"
