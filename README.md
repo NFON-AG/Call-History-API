@@ -47,7 +47,7 @@ By accessing and using the NFON Call History API, you agree to the [terms of use
 
 API endpoints may change: 
 - Please subscribe to `API Breaking Changes` on the [NFON Status page](https://status.nfon.com) for updates.
-- Please refer to the [latest API documentation](https://nfon-ag.github.io/CALL-HISTORY-API/).
+- Please refer to the [latest API documentation](https://nfon-ag.github.io/Call-History-API/).
 
 ---
 
@@ -69,7 +69,7 @@ For best practices, implementation guidance, and community support:
 For technical issues or suspected bugs, please contact NFON Support directly.
 
 ## API Endpoints
-Check the official [API documentation](https://nfon-ag.github.io/CALL-HISTORY-API/) for latest endpoint references.
+Check the official [API documentation](https://nfon-ag.github.io/Call-History-API/) for latest endpoint references.
 - **Base URL**: `https://api.nfon.com/call-history`
 - **Architecture**: RESTful API
 - **Data Format**: JSON
