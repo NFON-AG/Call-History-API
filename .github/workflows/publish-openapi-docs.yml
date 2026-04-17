@@ -1,0 +1,39 @@
+name: Publish OpenAPI Spec as ReDoc to /docs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "specs/openapi.yaml"
+      - ".github/workflows/publish-openapi-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify OpenAPI spec exists
+        run: |
+          test -f specs/openapi.yaml || (echo "specs/openapi.yaml not found" >&2; exit 1)
+
+      - name: Generate ReDoc HTML into /docs
+        run: | 
+          mkdir -p docs
+          # Generate index.html
+          npx --yes redoc-cli@latest build specs/openapi.yaml \
+            -o docs/index.html \
+            --title "NFON Call History API"
+          # Prevent Jekyll processing
+          touch docs/.nojekyll
+
+      - name: Commit and push /docs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(docs): publish ReDoc from openapi.yaml"
+          file_pattern: docs/**
