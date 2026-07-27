@@ -591,7 +591,7 @@ components:
 
                 **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `service` values that are not listed here (for example values that may refer to future PBX services). The clients should treat **unknown** or **empty** `service` values as `extension`.
               type: string
-              enum: ["extension", "queue", "skill", "ivr", "group", "time-control"]
+              enum: ["queue", "skill", "ivr", "group", "time-control", "voicemail"]
         direction:
           type: string
           description: The direction of the call from the perspective of the end user to which this call record applies.
