@@ -1,5 +1,18 @@
 # NFON Call History API Usage Manual
 
+> [!WARNING]
+> ## ⚠️ Upcoming Breaking Changes
+> 
+> Version `v2.0-early-access.2` will be released in the near future with **breaking changes**. As part of the Early Access program, the specification may evolve before reaching stability — once published as stable, it will be subject to proper versioning guarantees.
+> 
+> 👉 **Please read the [Breaking Changes Guide](./BREAKING_CHANGES.md) for details and migration instructions.**
+> 
+> Both specs are available side by side in [`specs/`](./specs/) for comparison.
+> 
+> The release date will be announced on the [NFON Status page](https://status.nfon.com) under `API Breaking Changes`.
+
+---
+
 - [Introduction](#introduction)
   - [What You Can Do With This API](#what-you-can-do-with-this-api)
   - [Terms of Use](#terms-of-use)
