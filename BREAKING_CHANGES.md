@@ -38,7 +38,7 @@ The `service` property can appear on both `caller` and `callee` objects.
 }
 ```
 
-**Migration:** Rename all references from `destination_type` to `service` in your client code. The allowed values remain unchanged: `extension`, `queue`, `skill`, `ivr`, `group`, `time-control`.
+**Migration:** Rename all references from `destination_type` to `service` in your client code. The allowed values remain unchanged: `queue`, `skill`, `ivr`, `group`, `time-control`, `voicemail`.
 
 ---
 
