@@ -589,7 +589,7 @@ components:
               description: |-
                 `optional` Only set for internal destinations.
 
-                **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `service` values that are not listed here (for example values that may refer to future PBX services). The clients should treat **unknown** or **empty** `service` values as `extension`.
+                **IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `service` values that are not listed here (for example values that may refer to future PBX services). Clients should treat **unknown*** or **empty** `service` values as a plain subscriber extension.
               type: string
               enum: ["queue", "skill", "ivr", "group", "time-control", "voicemail"]
         direction:
@@ -631,7 +631,7 @@ components:
                     description: "For details refer to the explanation in the `caller.context` property."
                   service:
                     type: string
-                    description: "**IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `service` values that are not listed here (for example values that may refer to future PBX services). The clients should treat **unknown** or **empty** `service` values as `extension`."
+                    description: "**IMPORTANT**: Any client side implementation **must** tolerate the presence of unknown `service` values that are not listed here (for example values that may refer to future PBX services). Clients should treat **unknown*** or **empty** `service` values as a plain subscriber extension."
                     enum: ["extension", "queue", "skill", "ivr", "group", "time-control"]
               updated:
                 type: string
