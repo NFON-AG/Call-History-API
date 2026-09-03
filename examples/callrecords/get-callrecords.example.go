@@ -20,7 +20,7 @@
 // 2. Fetches call records using the access token
 //
 // Steps to run:
-// 1. Login to https://id.nfon.com and open browser DevTools (F12)
+// 1. Login to your application using "Login with NFON" and open browser DevTools (F12)
 // 2. Inspect any API request and copy the Bearer token from the Authorization header
 // 3. Set environment variable:
 //    Linux/macOS:        export ACCESS_TOKEN='<your-token>'
@@ -45,7 +45,7 @@ const (
 	// TODO: Change these values to match your application
 	appName    = "NFON-GitHub-Example" // Replace with your application name
 	appVersion = "1.0"                 // Replace with your application version
-	baseURL    = "https://api.nfon.com/call-history"
+	baseURL    = "https://start.cloudya.com/api/callhistory"
 )
 
 var userAgent = appName + "/" + appVersion

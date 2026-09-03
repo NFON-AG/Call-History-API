@@ -15,7 +15,7 @@ info:
   license:
     name: NFON proprietary
 servers:
-  - url: https://api.nfon.com/call-history
+  - url: https://start.cloudya.com/api/callhistory
 
 tags:
   - name: records

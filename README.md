@@ -83,7 +83,7 @@ For technical issues or suspected bugs, please contact NFON Support directly.
 
 ## API Endpoints
 Check the official [API documentation](https://nfon-ag.github.io/Call-History-API/) for latest endpoint references.
-- **Base URL**: `https://api.nfon.com/call-history`
+- **Base URL**: `https://start.cloudya.com/api/callhistory`
 - **Architecture**: RESTful API
 - **Data Format**: JSON
 
@@ -139,7 +139,7 @@ GET /call-history/records
 This example API call fetches call history entries.
 
 ```bash
-curl 'https://api.nfon.com/call-history/records?limit=25' \
+curl 'https://start.cloudya.com/api/callhistory/records?limit=25' \
   -H 'accept: application/json' \
   -H 'authorization: Bearer <ACCESS_TOKEN>' \
   -H 'user-agent: my-crm-app/1.5.1'
