@@ -21,7 +21,7 @@
 // 3. Deletes that record by UUID
 // 
 // Steps to run:
-// 1. Login to https://id.nfon.com and open browser DevTools (F12)
+// 1. Login to your application using "Login with NFON" and open browser DevTools (F12)
 // 2. Inspect any API request and copy the Bearer token from the Authorization header
 // 3. Set environment variable:
 //    Linux/macOS:        export ACCESS_TOKEN='<your-token>'
@@ -43,7 +43,7 @@ public class DeleteCallRecordsExample {
   // TODO: Change these values to match your application
   private static final String APP_NAME = "NFON-GitHub-Example";  // Replace with your application name
   private static final String APP_VERSION = "1.0";               // Replace with your application version
-  private static final String BASE_URL = "https://api.nfon.com/call-history";
+  private static final String BASE_URL = "https://start.cloudya.com/api/callhistory";
   private static final String USER_AGENT = APP_NAME + "/" + APP_VERSION;
 
   public static void main(String[] args) {
