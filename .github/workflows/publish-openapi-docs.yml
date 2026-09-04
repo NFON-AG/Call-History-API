@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify OpenAPI spec exists
         run: |
@@ -33,7 +33,7 @@ jobs:
           touch docs/.nojekyll
 
       - name: Commit and push /docs
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore(docs): publish ReDoc from openapi.yaml"
           file_pattern: docs/**
